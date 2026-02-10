@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valentine Preview</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,Arial,sans-serif;overflow-x:hidden;display:flex;justify-content:center;align-items:center;min-height:100vh;transition:background 1s;}
+.container{background:rgba(255,255,255,0.95);padding:30px 40px;border-radius:20px;max-width:520px;width:90%;text-align:center;position:relative;z-index:5;box-shadow:0 10px 30px rgba(0,0,0,0.2);}
+h1{font-size:2em;margin-bottom:30px;}
+.buttons{position:relative;height:140px;width:100%;}
+button{padding:15px 30px;border:none;border-radius:50px;font-size:1em;cursor:pointer;position:absolute;transition:all 0.25s ease;touch-action:manipulation;}
+#yesBtn{left:20%;top:40px;}
+#noBtn{left:60%;top:40px;}
+#finalMessage{display:none;font-size:1.2em;margin-top:20px;line-height:1.4;}
+#shareBtn{display:none;margin-top:20px;width:100%;max-width:260px;}
+#musicToggle{position:fixed;bottom:18px;right:18px;padding:12px 18px;border-radius:40px;border:none;background:rgba(0,0,0,0.75);color:white;cursor:pointer;z-index:10;}
+.heart{position:fixed;width:32px;height:32px;transform:rotate(45deg);animation:float 10s linear infinite;z-index:1;opacity:0.9;}
+.heart::before,.heart::after{content:"";position:absolute;width:32px;height:32px;border-radius:50%;}
+.heart::before{top:-16px;left:0;}
+.heart::after{left:-16px;top:0;}
+@keyframes float{from{transform:translateY(110vh) rotate(45deg);}to{transform:translateY(-120px) rotate(45deg);}}
+.confetti{position:fixed;width:10px;height:10px;pointer-events:none;z-index:999;animation:confettiFall linear forwards;}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);}100%{transform:translateY(100vh) rotate(360deg);}}
+.sparkle{position:absolute;width:6px;height:6px;background:white;border-radius:50%;box-shadow:0 0 6px #fff;pointer-events:none;animation:sparkleFade 1s forwards;}
+@keyframes sparkleFade{0%{opacity:1;}100%{opacity:0;transform:scale(2);}}
+.hintBox{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:white;padding:10px 15px;border-radius:12px;font-size:0.9em;opacity:0;transition:opacity 0.3s;z-index:20;}
+.hintBox.show{opacity:1;}
+#nameSelect{margin-bottom:20px;padding:8px 12px;font-size:1em;border-radius:10px;}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <select id="nameSelect">
+    <option value="Bophelo">Bophelo</option>
+    <option value="Gijon">Gijon</option>
+    <option value="Nipho">Nipho</option>
+  </select>
+  <h1 id="title">Will you be my Valentine, Bophelo? ❤️</h1>
+  <div class="buttons">
+    <button id="yesBtn">Yes</button>
+    <button id="noBtn">No</button>
+  </div>
+  <div id="finalMessage">I knew you would say yes Bophelo 💖 Can't wait to see you!</div>
+  <div style="display:flex; justify-content:center;">
+    <button id="shareBtn">Share on WhatsApp</button>
+  </div>
+</div>
+
+<button id="musicToggle">🔊 Music</button>
+<div class="hintBox" id="hintBox"></div>
+
+<audio id="bgMusic" loop preload="auto">
+  <source src="https://example.com/your-romantic-music.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+// Name Data
+const data = {
+  Bophelo: {
+    color:'#ff9a9e',
+    text:"Will you be my Valentine, Bophelo? ❤️",
+    final:"I knew you would say yes Bophelo 💖 Can't wait to see you!",
+    whatsapp:"Hey Bophelo, will you be my Valentine? ❤️",
+    easter:{hearts:3, holdYes:3000, cornerHover:true, resize:true, konami:true}
+  },
+  Gijon: {
+    color:'#ff416c',
+    text:"Will you be my Valentine, Gijon? ❤️",
+    final:"Gijon, you just made me the happiest ❤️ See you soon!",
+    whatsapp:"Hey Gijon, will you be my Valentine? ❤️",
+    easter:{hearts:3, rapidYes:5, shake:true, cornerHover:true, doubleClick:true}
+  },
+  Nipho: {
+    color:'#a18cd1',
+    text:"Will you be my Valentine, Nipho? 💜",
+    final:"Nipho, I knew you’d say yes 💖 See you soon!",
+    whatsapp:"Hey Nipho, will you be my Valentine? 💜",
+    easter:{hearts:4, holdYes:2500, pressN:3, hoverSides:true, resize:true}
+  }
+};
+
+const title = document.getElementById('title');
+const finalMsg = document.getElementById('finalMessage');
+const shareBtn = document.getElementById('shareBtn');
+const nameSelect = document.getElementById('nameSelect');
+const container = document.querySelector('.container');
+const body = document.body;
+const noBtn = document.getElementById('noBtn');
+const yesBtn = document.getElementById('yesBtn');
+const hintBox = document.getElementById('hintBox');
+const music = document.getElementById('bgMusic');
+const musicToggle = document.getElementById('musicToggle');
+
+let currentName = nameSelect.value;
+
+// Set theme & text
+function setName(name){
+  currentName = name;
+  const d = data[name];
+  title.innerText = d.text;
+  finalMsg.innerText = d.final;
+  finalMsg.style.display='none';
+  document.querySelector('.buttons').style.display='block';
+  shareBtn.style.display='none';
+  body.style.background=`linear-gradient(135deg, ${d.color}, #fff)`;
+  heartClicks=0; yesHoldTimer=null; rapidYesCount=0;
+}
+nameSelect.addEventListener('change',()=>setName(nameSelect.value));
+setName(currentName);
+
+// Music toggle
+function startMusic(){music.play().catch(()=>{});}
+document.addEventListener('click',startMusic,{once:true});
+document.addEventListener('touchstart',startMusic,{once:true});
+musicToggle.addEventListener('click',()=>{if(music.paused){music.play();musicToggle.innerText="🔊 Music";}else{music.pause();musicToggle.innerText="🔇 Muted";}});
+
+// No button dodge
+function moveNoButton(){
+  const c=document.querySelector('.buttons'),
+        x=c.clientWidth-noBtn.clientWidth,
+        y=c.clientHeight-noBtn.clientHeight,
+        phrases=["Are you sure?","Really?","Think again!","Don't break my heart"];
+  noBtn.style.left=Math.random()*x+'px'; noBtn.style.top=Math.random()*y+'px';
+  noBtn.innerText=phrases[Math.floor(Math.random()*phrases.length)];
+}
+noBtn.addEventListener('mouseover',moveNoButton);
+noBtn.addEventListener('touchstart',moveNoButton);
+
+// Yes button
+let yesHoldTimer=null, rapidYesCount=0;
+yesBtn.addEventListener('click',()=>{
+  if(navigator.vibrate)navigator.vibrate([200,100,200]);
+  finalMsg.style.display='block';
+  document.querySelector('.buttons').style.display='none';
+  shareBtn.style.display='inline-block';
+  rapidYesCount++;
+  if(currentName==="Gijon" && rapidYesCount>=5){
+    showHint("Persistence pays 💖"); createConfetti();
+    rapidYesCount=0;
+  }
+});
+yesBtn.addEventListener('mousedown',()=>{if(data[currentName].easter.holdYes){yesHoldTimer=setTimeout(()=>{showHint("💖 Commitment unlocked!"); createConfetti();},data[currentName].easter.holdYes);}});
+yesBtn.addEventListener('mouseup',()=>clearTimeout(yesHoldTimer));
+yesBtn.addEventListener('touchstart',()=>{if(data[currentName].easter.holdYes){yesHoldTimer=setTimeout(()=>{showHint("💖 Commitment unlocked!"); createConfetti();},data[currentName].easter.holdYes);}});
+yesBtn.addEventListener('touchend',()=>clearTimeout(yesHoldTimer));
+
+// WhatsApp share
+shareBtn.addEventListener('click',()=>{window.open(`https://wa.me/?text=${encodeURIComponent(data[currentName].whatsapp)}`,'_blank');});
+
+// Hearts
+function createHeart(){
+  const h=document.createElement('div');
+  h.classList.add('heart');
+  h.style.left=Math.random()*100+'vw';
+  h.style.background = data[currentName].color;
+  h.style.animationDuration = (Math.random()*5+5)+'s';
+  document.body.appendChild(h);
+  setTimeout(()=>h.remove(),10000);
+}
+setInterval(createHeart,900);
+
+// Confetti
+function createConfetti(){
+  for(let i=0;i<20;i++){
+    const c=document.createElement('div');
+    c.classList.add('confetti');
+    c.style.background=`hsl(${Math.random()*360},70%,60%)`;
+    c.style.left=Math.random()*100+'vw';
+    c.style.animationDuration=(Math.random()*3+2)+'s';
+    c.style.width=(Math.random()*6+4)+'px';
+    c.style.height=(Math.random()*6+4)+'px';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),3500);
+  }
+}
+
+// Sparkle
+function createSparkle(x,y){
+  const s=document.createElement('div');
+  s.classList.add('sparkle');
+  s.style.left=x+'px';
+  s.style.top=y+'px';
+  document.body.appendChild(s);
+  setTimeout(()=>s.remove(),1000);
+}
+
+// Hint system
+function showHint(text){
+  hintBox.innerText=text;
+  hintBox.classList.add('show');
+  setTimeout(()=>hintBox.classList.remove('show'),3500);
+}
+
+// Easter Egg tracking
+let heartClicks=0;
+let pressNCount=0;
+
+// Heart click easter
+document.body.addEventListener('click', e=>{
+  if(e.target.classList.contains('heart')){
+    heartClicks++;
+    if(currentName==="Bophelo" && heartClicks>=3){showHint("🎉 Confetti!"); createConfetti(); heartClicks=0;}
+    if(currentName==="Gijon" && heartClicks>=3){showHint("You found me! 🎉"); createConfetti(); heartClicks=0;}
+    if(currentName==="Nipho" && heartClicks>=4){showHint("Secret unlocked! 🎉"); createConfetti(); heartClicks=0;}
+  }
+});
+
+// Resize for Bophelo/Nipho
+let lastWidth=window.innerWidth,lastHeight=window.innerHeight;
+window.addEventListener('resize',()=>{
+  if(currentName==="Bophelo" && Math.abs(window.innerWidth-lastWidth)>100){showHint("Love can't be escaped 😘"); createConfetti();}
+  if(currentName==="Nipho" && Math.abs(window.innerWidth-lastWidth)>100){showHint("Love adapts 🌈"); createConfetti();}
+  lastWidth=window.innerWidth; lastHeight=window.innerHeight;
+});
+
+// Hover Corners / Sides
+container.addEventListener('mousemove', e=>{
+  const rect=container.getBoundingClientRect();
+  if(e.offsetX<50 && e.offsetY<50) createSparkle(e.pageX,e.pageY);
+  if(e.offsetX>rect.width-50 && e.offsetY<50) createSparkle(e.pageX,e.pageY);
+  if(e.offsetX<50 && e.offsetY>rect.height-50) createSparkle(e.pageX,e.pageY);
+  if(e.offsetX>rect.width-50 && e.offsetY>rect.height-50) createSparkle(e.pageX,e.pageY);
+  if(currentName==="Nipho" && (e.offsetX<50||e.offsetX>rect.width-50)) showHint("👀 You found a side hint!");
+});
+
+// Press N for Nipho
+window.addEventListener('keydown', e=>{
+  if(currentName==="Nipho" && e.key.toLowerCase()==="n"){pressNCount++; if(pressNCount>=3){showHint("🎉 N-key secret!"); createConfetti(); pressNCount=0;}}
+});
+
+// Gijon double click container
+container.addEventListener('dblclick', ()=>{if(currentName==="Gijon"){showHint("💖 Heart explosion!"); createConfetti();}});
+
+// Konami code for Bophelo
+let konamiCodeArr=[];
+const konamiSeq=["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
+window.addEventListener('keydown', e=>{
+  if(currentName==="Bophelo"){
+    konamiCodeArr.push(e.key);
+    if(konamiCodeArr.slice(-konamiSeq.length).join('')===konamiSeq.join('')){
+      body.style.background="linear-gradient(135deg, #ff0000,#ff9900,#ffff00,#00ff00,#00ffff,#ff00ff)";
+      createConfetti(); showHint("🌈 Rainbow unlocked!");
+      konamiCodeArr=[];
+    }
+  }
+});
+
+</script>
+</body>
+</html>
